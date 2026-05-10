@@ -27,7 +27,7 @@ jobs:
           docker build \
             --build-arg VITE_API_URL=http://localhost:5000 \
             -t $FRONTEND_IMAGE:${{ github.sha }} \
-            ./frontend
+            ./live-video-chat-app
 
       # ---------- Run ----------
       - name: Start containers
@@ -43,7 +43,10 @@ jobs:
             $FRONTEND_IMAGE:${{ github.sha }}
 
       - name: Wait for containers to start
-        run: sleep 5
+        run: |
+          sleep 10
+          docker ps
+          docker logs backend
 
       # ---------- Test ----------
       - name: Check backend health
