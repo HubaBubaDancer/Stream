@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "dgSpecHash": "7n0T9xGuApQ=",
+  "success": true,
+  "projectFilePath": "D:\\Other\\DotnetStream\\StreamApp\\StreamApp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Irobo\\.nuget\\packages\\microsoft.aspnetcore.signalr\\1.2.9\\microsoft.aspnetcore.signalr.1.2.9.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference Microsoft.AspNetCore.SignalR не будет урезано. Рассмотрите возможность удаления этого пакета из зависимостей, так как он, вероятно, не требуется.",
+      "projectPath": "D:\\Other\\DotnetStream\\StreamApp\\StreamApp.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\Other\\DotnetStream\\StreamApp\\StreamApp.csproj",
+      "libraryId": "Microsoft.AspNetCore.SignalR",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}
