@@ -1,0 +1,106 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/streamapp-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/streamapp-frontend
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ---------- Build ----------
+      - name: Build backend image
+        run: docker build -t $BACKEND_IMAGE:${{ github.sha }} ./StreamApp
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=http://localhost:5000 \
+            -t $FRONTEND_IMAGE:${{ github.sha }} \
+            ./frontend
+
+      # ---------- Run ----------
+      - name: Start containers
+        run: |
+          docker run -d --name backend \
+            -p 5000:5000 \
+            -p 1935:1935 \
+            -e ASPNETCORE_URLS=http://0.0.0.0:5000 \
+            $BACKEND_IMAGE:${{ github.sha }}
+
+          docker run -d --name frontend \
+            -p 3000:80 \
+            $FRONTEND_IMAGE:${{ github.sha }}
+
+      - name: Wait for containers to start
+        run: sleep 5
+
+      # ---------- Test ----------
+      - name: Check backend health
+        run: |
+          curl --fail --retry 5 --retry-delay 2 http://localhost:5000/health
+
+      - name: Check backend root
+        run: |
+          curl --fail http://localhost:5000/
+
+      - name: Check frontend
+        run: |
+          curl --fail http://localhost:3000/
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== BACKEND LOGS ==="
+          docker logs backend
+          echo "=== FRONTEND LOGS ==="
+          docker logs frontend
+
+      # ---------- Stop & Cleanup ----------
+      - name: Stop and remove containers
+        if: always()
+        run: |
+          docker stop backend frontend || true
+          docker rm backend frontend || true
+
+      - name: Remove images
+        if: always()
+        run: |
+          docker rmi $BACKEND_IMAGE:${{ github.sha }} || true
+          docker rmi $FRONTEND_IMAGE:${{ github.sha }} || true
+
+      # ---------- Push to Docker Hub ----------
+      - name: Login to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push backend
+        if: github.event_name == 'push'
+        run: |
+          docker build -t $BACKEND_IMAGE:latest -t $BACKEND_IMAGE:${{ github.sha }} ./StreamApp
+          docker push $BACKEND_IMAGE:latest
+          docker push $BACKEND_IMAGE:${{ github.sha }}
+
+      - name: Push frontend
+        if: github.event_name == 'push'
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=http://localhost:5000 \
+            -t $FRONTEND_IMAGE:latest \
+            -t $FRONTEND_IMAGE:${{ github.sha }} \
+            ./frontend
+          docker push $FRONTEND_IMAGE:latest
+          docker push $FRONTEND_IMAGE:${{ github.sha }}
