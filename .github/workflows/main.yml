@@ -104,6 +104,6 @@ jobs:
             --build-arg VITE_API_URL=http://localhost:5000 \
             -t $FRONTEND_IMAGE:latest \
             -t $FRONTEND_IMAGE:${{ github.sha }} \
-            ./frontend
+            ./live-video-chat-app
           docker push $FRONTEND_IMAGE:latest
           docker push $FRONTEND_IMAGE:${{ github.sha }}
